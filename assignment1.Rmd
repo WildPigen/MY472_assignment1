@@ -1,0 +1,118 @@
+---
+title: "Assignment 1"
+author: "Songying Chen 202310780"
+date: "Oct. 11th 2023"
+output: html_document
+---
+
+This document contains answers of formative assignment 1. The following script is my answer.
+
+#Setup
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(echo = FALSE) 
+
+#set the environment and get all the packages that may be useful
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(scales)
+```
+
+
+# Exercise 1
+My forked version of the assignment template repository can be found at https://github.com/WildPigen/472_assignment_template
+
+# Exercise 2
+
+##This is the coding of exercise 2
+```{r}
+data("co2") #get data
+force(co2) #display the data
+head(co2) #show the first few rows of data
+```
+
+*The first few rows of the dataset co2 is not tidy because this data is a time-series matrix instead of a dataset. And even if we see it as a dataset, the structure of co2 is untidy. We can simply convert the data into three column "Year","Month", and "Value".
+
+*The following code shows how I manage to convert the untidy matrix data into a tidy dataset one. The thing I would need to do is to first convert matrix into dataset and then pivot_longer.
+
+```{r}
+#convert time-series matrix to dataset
+df <- as.data.frame(t(matrix(co2, 12))) #convert the matrix into a dataset
+df <- df %>%
+  mutate(c(1959:1997)) #add the value of variable "year"
+colnames(df) <- c(1:12, "year") #rename the columns into more informative ones
+
+#pivot long
+co2_long <- df %>%
+  pivot_longer(cols = colnames(df)[1:12],
+                        names_to = "Month", values_to = "COE") #pivot the dataset longer to make it tidy. I set the variable from column[1:12] and name it to "Month", and match the values as "COE"
+head(co2_long) #show the first few rows of the longer dataset
+```
+
+*In short, the above code shows how the data co2, shown in time-series matrix and untidy, is convert into a tidy dataset. To compare the difference of data before and after, here list a few characteristics of the two data form.
+
+For the former data, co2, it has the following traits:
+
+1.Column headers are values, not variable names
+
+2.Multiple variables are stored in one column, namely the Month and CO2 Emission
+
+3.Variables are stored in both rows and columns
+
+For the later data, co2_long, it has the following traits:
+
+1.Each variable forms a column
+
+2.Each observation forms a row
+
+3.Each type of observational unit forms a table
+
+*Therefore, I try to convert the data to make every row shows one observation and make the two date information "month", and "year" clear by pivot longer.
+
+references:
+[1] Wickham, Hadley. 2014. Tidy Data. Journal of Statistical Software; Vol 59; Issue 10. Retrieved from https://www.jstatsoft.org/article/view/v059i10
+
+
+# Exercise 3
+
+*below shows the results and code of exercise 3
+```{r echo=TRUE}
+
+#load the data of UCB admissions in R and view the data
+data("UCBAdmissions")
+view(UCBAdmissions)
+
+#convert the data into a dataset
+ucb <-as.data.frame(UCBAdmissions)
+head(ucb)
+
+#try to figure out different admission rates in different genders in the same department
+ucb_ratio_bygender <- ucb %>%
+  group_by(Gender,Dept) %>% #group the data by Gender and Department so that the following analysis is valid
+  mutate(applicant = sum(Freq)) %>% #add a column to calculate all the applicants in the same Dept and Gender
+  filter(Admit == "Admitted") %>% #filter the ones who get admitted to calculate the admission rate
+  summarise(Ratio = Freq / applicant) #summarise the info to see admission rates in different genders in the same department
+
+head(ucb_ratio_bygender)
+
+# Create a bar chart for admission rates
+gender_plot <- ggplot(ucb_ratio_bygender, #draw a bar chart by ggplot2
+                      aes(x = Dept, y = Ratio, fill = Gender)) +#set the x and y data and fill the data by Gender
+  geom_bar(stat = "identity", position = "dodge") + #set the why I would like to plot the bar graph
+  scale_y_continuous(labels = scales :: percent) + #set the y axis into a percentage format
+  labs(title = "UCB Admissions by Gender and Dept", #set the title and labels of x and y
+       x = "Department", y = "Admission Rate") +
+  theme_minimal()
+gender_plot #plot the graph
+```
+
+
+In the transformed dataset, I try to calculate the admission rate by gender and department and turned the frequency numbers into a much more informative ratio. Therefore, in the summarized dataset, the data is presented in a way that is much easy for the reader to capture whether the admission rates of different gender type are significantly different based departments. Also, I have plot a graph to make the data more visualized and easy to compare.
+
+
+# Appendix: All code in this assignment
+
+```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE} 
+# this chunk generates the complete code appendix. 
+# eval=FALSE tells R not to run (``evaluate'') the code here (it was already run before).
+```
